@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
-using static UnityEditor.Experimental.AssetDatabaseExperimental.AssetDatabaseCounters;
+//using static UnityEditor.Experimental.AssetDatabaseExperimental.AssetDatabaseCounters;
 
 public class BlackPanel : MonoBehaviour
 {
@@ -18,7 +18,7 @@ public class BlackPanel : MonoBehaviour
         StartCoroutine(DoFade(canvGroup, canvGroup.alpha, isFaded ? 1 : 0));
 
         //Toggle the faded state
-       // isFaded = !isFaded;
+        isFaded = !isFaded;
         canvGroup.alpha = Mathf.Lerp(0, 1, Time.deltaTime* Duration);
 
     }
@@ -29,7 +29,7 @@ public class BlackPanel : MonoBehaviour
         while (counter < Duration)
         {
             counter += Time.deltaTime;
-            canvGroup.alpha = Mathf.Lerp(start, end, counter / Duration);
+            canvGroup.alpha = Mathf.Lerp(start, end, counter / Duration); 
 
             yield return null; //Because we don't need a return value.
         }
