@@ -1,38 +1,99 @@
 using System.Collections;
-using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
-//using static UnityEditor.Experimental.AssetDatabaseExperimental.AssetDatabaseCounters;
+using UnityEngine.SceneManagement;
 
 public class BlackPanel : MonoBehaviour
 {
-    //public RectTransform panel;
-    private bool isFaded =false;
-    private float Duration = 0.4f;
-    public void Fade()
+    private bool isFaded = false;
+    private float duration = 0.4f;
+
+    public GameObject lookAroundJoystick;
+    public GameObject moveAroundJoystick;
+    public GameObject sitButton;
+
+    // Reference to loading screen UI
+    public GameObject loadingScreen;
+    public Slider loadingBar; // This will be the progress bar
+
+    public string sceneToLoad = "NextSceneName"; // Scene name or index to load
+
+    public void FadeAndLoadScene()
     {
         var canvGroup = GetComponent<CanvasGroup>();
 
-        //Toggle the end value depending on the faded state ( from 1 to 0)
-        StartCoroutine(DoFade(canvGroup, canvGroup.alpha, isFaded ? 1 : 0));
+        if (canvGroup == null)
+        {
+            Debug.LogError("CanvasGroup component is missing!");
+            return;
+        }
 
-        //Toggle the faded state
-        isFaded = !isFaded;
-        canvGroup.alpha = Mathf.Lerp(0, 1, Time.deltaTime* Duration);
+        // Disable joystick input during the fade
+        SetJoysticksActive(false);
 
+        // Start fading and then load the scene after the panel goes black
+        StartCoroutine(DoFade(canvGroup, canvGroup.alpha, 1, () => StartLoadingScene()));
     }
-    public IEnumerator DoFade(CanvasGroup canvGroup, float start, float end)//Runto complition beforex
+
+    private IEnumerator DoFade(CanvasGroup canvGroup, float start, float end, System.Action onFadeComplete = null)
     {
         float counter = 0f;
 
-        while (counter < Duration)
+        while (counter < duration)
         {
             counter += Time.deltaTime;
-            canvGroup.alpha = Mathf.Lerp(start, end, counter / Duration); 
+            canvGroup.alpha = Mathf.Lerp(start, end, counter / duration);
 
-            yield return null; //Because we don't need a return value.
+            yield return null;
+        }
+
+        // Ensure that the final value is set properly
+        canvGroup.alpha = end;
+
+        // Call the action after fade completes (i.e., start loading)
+        onFadeComplete?.Invoke();
+    }
+
+    // Method to activate/deactivate joystick input
+    private void SetJoysticksActive(bool isActive)
+    {
+        if (lookAroundJoystick != null)
+            lookAroundJoystick.SetActive(isActive);
+
+        if (moveAroundJoystick != null)
+            moveAroundJoystick.SetActive(isActive);
+
+        if (sitButton != null)
+            sitButton.SetActive(isActive);
+    }
+
+    // Method to start loading the scene asynchronously
+    private void StartLoadingScene()
+    {
+        // Activate loading screen and begin loading process
+        loadingScreen.SetActive(true);
+        StartCoroutine(LoadSceneAsync());
+    }
+
+    private IEnumerator LoadSceneAsync()
+    {
+        AsyncOperation operation = SceneManager.LoadSceneAsync(sceneToLoad);
+        operation.allowSceneActivation = false;
+
+        while (!operation.isDone)
+        {
+            // Update the loading bar
+            float progress = Mathf.Clamp01(operation.progress / 0.9f);
+            loadingBar.value = progress;
+
+            // If loading is complete, activate the new scene
+            if (operation.progress >= 0.9f)
+            {
+                // Activate scene when progress is full and the panel is faded out
+                operation.allowSceneActivation = true;
+            }
+
+            yield return null;
         }
     }
 }
-
